@@ -87,7 +87,7 @@ test('inside cmux: a background cmux tab, named after the worker, typed the atta
   const name = (h.calls.find(c => c.startsWith('tmux new-session')) ?? '').match(/-s (cw-[a-z0-9]+)/)?.[1]
   expect(h.calls).toContain('/Apps/cmux new-surface --type terminal --focus false')
   expect(h.calls).toContain(`/Apps/cmux rename-tab --surface surface:110 ${name}`)
-  expect(h.calls).toContain(`/Apps/cmux send --surface surface:110 /opt/homebrew/bin/tmux attach -t =${name}\n`)
+  expect(h.calls).toContain(`/Apps/cmux send --surface surface:110 /opt/homebrew/bin/tmux attach -t '=${name}'\n`)
   expect(h.calls.some(c => c.startsWith('osascript'))).toBe(false)
   expect(await ui.find({ type: 'Text', text: /opened in a new tab/ })).toBeDefined()
   await ui.unmount()

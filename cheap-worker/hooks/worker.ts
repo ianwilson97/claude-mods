@@ -19,7 +19,7 @@ export const surfaceRef = (stdout: string) => stdout.match(/\bsurface:\d+\b/)?.[
 export function attachLine(session: string, tmuxPath: string): string {
   if (!/^cw-[a-z0-9]+$/.test(session)) throw new Error(`not a worker session: ${session}`)
   if (!/^\/[\w./+-]+$/.test(tmuxPath)) throw new Error(`not an absolute tmux path: ${tmuxPath}`)
-  return `${tmuxPath} attach -t =${session}\n`
+  return `${tmuxPath} attach -t '=${session}'\n`
 }
 
 /**
