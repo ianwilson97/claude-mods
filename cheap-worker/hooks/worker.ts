@@ -12,6 +12,16 @@ export type LaunchMode = 'panes' | 'tabs'
 export const BEDROCK_MODELS: OrModel[] = ['sonnet', 'opus', 'haiku'].map(a => ({ id: `anthropic/${a}`, inPerM: 0, outPerM: 0 }))
 export const defaultModelFor = (p: Provider) => (p === 'bedrock' ? 'anthropic/sonnet' : DEFAULT_MODEL)
 
+/** `cmux new-surface` prints `OK surface:110 pane:38 workspace:14`: the new tab's ref. */
+export const surfaceRef = (stdout: string) => stdout.match(/\bsurface:\d+\b/)?.[0] ?? null
+
+/** What cmux types into the new tab: the attach, then Enter (a real newline; cmux sends text as typed). */
+export function attachLine(session: string, tmuxPath: string): string {
+  if (!/^cw-[a-z0-9]+$/.test(session)) throw new Error(`not a worker session: ${session}`)
+  if (!/^\/[\w./+-]+$/.test(tmuxPath)) throw new Error(`not an absolute tmux path: ${tmuxPath}`)
+  return `${tmuxPath} attach -t =${session}\n`
+}
+
 /**
  * AppleScript for Ghostty 1.3+: a new tab in the front window whose process is the
  * attach itself, then re-selects the tab you were on so focus doesn't jump. tmux by

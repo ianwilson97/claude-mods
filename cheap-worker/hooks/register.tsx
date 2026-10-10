@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Active, Launch, Mode, Msg, Picker, WStats } from '../types'
-import { BEDROCK_MODELS, DEFAULT_MODEL, META_FORMAT, defaultModelFor, ghosttyTabScript, bannerModel, parseMeta, choicesFor, clockDur, costOf, isRetired, isWorking, kfmt, leadFrom, parseModels, parsePanes, parsePeer, peekLines, price, projectDir, search, sq, teamPreamble, toPins, tokensOf, usageFrom, vendorOf, workerScript } from './worker'
+import { BEDROCK_MODELS, DEFAULT_MODEL, META_FORMAT, attachLine, defaultModelFor, ghosttyTabScript, surfaceRef, bannerModel, parseMeta, choicesFor, clockDur, costOf, isRetired, isWorking, kfmt, leadFrom, parseModels, parsePanes, parsePeer, peekLines, price, projectDir, search, sq, teamPreamble, toPins, tokensOf, usageFrom, vendorOf, workerScript } from './worker'
 import type { LaunchMode, Provider } from './worker'
 
 const PANE = 'cheap-worker'
@@ -109,12 +109,8 @@ async function launch($: EngineInterface, task: string): Promise<{ l: Launch; is
     if (made.exitCode !== 0) throw new Error(made.stderr.trim() || 'tmux could not start a session')
     const pane = made.stdout.trim()
     await label(pane)
-    // The first run waits on macOS's "allow control of Ghostty?" dialog; past 15s (or refused) → manual CMD+T + crew.
     const tmuxPath = (await $.process.run(['zsh', '-c', 'command -v tmux']).catch(() => null))?.stdout.trim() ?? ''
-    const tab = tmuxPath.startsWith('/')
-      ? await $.process.run(['osascript', '-e', ghosttyTabScript(name, tmuxPath)], { timeoutMs: 15_000 }).catch(() => null)
-      : null
-    return { l: { ...l, pane }, isTabOpen: tab?.exitCode === 0 }
+    return { l: { ...l, pane }, isTabOpen: tmuxPath.startsWith('/') && (await openTab($, name, tmuxPath)) }
   }
 
   // The same layout as cw: session `cw`, window `workers`, tiled panes.
@@ -132,6 +128,25 @@ async function launch($: EngineInterface, task: string): Promise<{ l: Launch; is
   await tmux($, ['set', '-t', 'cw', 'pane-border-status', 'top'])
   await tmux($, ['set', '-t', 'cw', 'pane-border-format', ' #{@cw} '])
   return { l: { ...l, pane }, isTabOpen: null }
+}
+
+/**
+ * Opens a background tab attached to the worker's session: in cmux (when this session runs
+ * inside it) through its CLI, else in Ghostty through AppleScript. False → the caller says CMD+T + crew.
+ */
+async function openTab($: EngineInterface, name: string, tmuxPath: string): Promise<boolean> {
+  if (await $.env.get('CMUX_WORKSPACE_ID').catch(() => undefined)) {
+    const cmux = (await $.env.get('CMUX_BUNDLED_CLI_PATH').catch(() => undefined)) || 'cmux'
+    const made = await $.process.run([cmux, 'new-surface', '--type', 'terminal', '--focus', 'false'], { timeoutMs: 10_000 }).catch(() => null)
+    const ref = made?.exitCode === 0 ? surfaceRef(made.stdout) : null
+    if (!ref) return false
+    await $.process.run([cmux, 'rename-tab', '--surface', ref, name], { timeoutMs: 10_000 }).catch(() => null)
+    const sent = await $.process.run([cmux, 'send', '--surface', ref, attachLine(name, tmuxPath)], { timeoutMs: 10_000 }).catch(() => null)
+    return sent?.exitCode === 0
+  }
+  // The first run waits on macOS's "allow control of Ghostty?" dialog; past 15s (or refused) → manual CMD+T + crew.
+  const tab = await $.process.run(['osascript', '-e', ghosttyTabScript(name, tmuxPath)], { timeoutMs: 15_000 }).catch(() => null)
+  return tab?.exitCode === 0
 }
 
 /** Puts the `crew` picker on PATH (~/.local/bin), never over someone else's `crew`. */
@@ -470,7 +485,7 @@ export const register: Register = (on, options) => {
                   isTabOpen === null
                     ? `${l.name} started in tmux cw:workers. Watch: tmux new -A -s cw`
                     : isTabOpen
-                      ? `${l.name} opened in a new Ghostty tab (or: crew ${l.name.slice(3)})`
+                      ? `${l.name} opened in a new tab (or: crew ${l.name.slice(3)})`
                       : `${l.name} is running. Open it: CMD+T, then  crew ${l.name.slice(3)}`
                 await update($, picker, x => ({ ...x, launched: [l, ...x.launched].slice(0, 12), flash: { text: where, isError: false } }))
                 if (isTabOpen === false) $.ui.toast(`${l.name}: CMD+T, then  crew ${l.name.slice(3)}`)

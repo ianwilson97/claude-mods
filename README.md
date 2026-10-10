@@ -33,7 +33,7 @@ Set per machine in `/config` (or `pluginConfigs.cheap-worker.options` in `~/.cla
 | `provider` | `openrouter` (default) | Any OpenRouter model; key read from `$CW_OPENROUTER_API_KEY` (export it in `~/.zshenv`). Workers skip user settings, hooks and plugins. |
 | | `bedrock` | Claude only (Sonnet / Opus / Haiku). Workers keep your user settings, so the Bedrock env there (`CLAUDE_CODE_USE_BEDROCK`, `AWS_REGION`, `AWS_PROFILE`, …) applies. No call to openrouter.ai. |
 | `launch` | `panes` (default) | All workers tiled in tmux session `cw`: `tmux new -A -s cw`. |
-| | `tabs` | Each worker gets a tmux session of its own and opens in a new Ghostty tab (focus stays where you were). |
+| | `tabs` | Each worker gets a tmux session of its own and opens in a background tab: a cmux tab when Claude Code runs inside cmux, else a Ghostty tab (focus stays where you were). |
 
 Work laptop: `provider = bedrock`, `launch = tabs`.
 
@@ -48,7 +48,7 @@ crew ab12c      # attach to cw-ab12c
 
 If Ghostty can't be scripted (macOS asks once to let Claude control Ghostty; a managed Mac may refuse), the worker still runs: press CMD+T and run `crew`. Closing a tab only detaches; the worker keeps running until you close it from `/workers`.
 
-Needs: tmux, Ghostty 1.3+ for auto-opened tabs.
+Needs: tmux; for auto-opened tabs, cmux or Ghostty 1.3+.
 
 ## First run on a new machine: checks
 
