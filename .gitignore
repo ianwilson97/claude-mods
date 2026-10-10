@@ -1,0 +1,4 @@
+# Claude Code lays each mod's editor types and tsconfig here when it loads the mod.
+*/.claude-plugin/types/
+*/tsconfig.json
+.DS_Store

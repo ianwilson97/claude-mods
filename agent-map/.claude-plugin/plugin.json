@@ -1,0 +1,7 @@
+{
+  "name": "agent-map",
+  "version": "0.1.0",
+  "description": "Live project file tree showing which file each agent (main, subagents, cheap workers) is editing (red 🔨) and what's ready for review (green ✓)",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

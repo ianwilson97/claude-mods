@@ -1,0 +1,7 @@
+{
+  "name": "quick-settings",
+  "version": "0.1.0",
+  "description": "A button under the prompt that opens a pane to switch /model and /effort; add a setting by adding one control",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

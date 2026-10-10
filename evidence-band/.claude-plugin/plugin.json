@@ -1,0 +1,7 @@
+{
+  "name": "evidence-band",
+  "version": "0.1.0",
+  "description": "On status/audit prompts: require doc + file:line citations and show which sources Claude actually read",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

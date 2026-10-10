@@ -1,0 +1,43 @@
+#!/bin/zsh
+# crew — cheap-worker: attach to a Claude worker the cheap-worker mod started.
+#   crew            list running workers, pick one by number
+#   crew <name>     attach to cw-<name> (the cw- prefix is optional)
+# Works for both launch modes: a pane in the shared `cw` session, or a session of its own.
+emulate -L zsh
+setopt no_unset
+
+local -a rows
+rows=("${(@f)$(tmux list-panes -a -F $'#{@cw}\t#{session_name}\t#{pane_id}\t#{@cw_model}\t#{@cw_task}' 2>/dev/null | awk -F'\t' '$1 != ""')}")
+rows=(${rows:#})
+
+go() { # session pane
+  if [[ -n ${TMUX:-} ]]; then
+    exec tmux switch-client -t "=$1" \; select-window -t "$2" \; select-pane -t "$2"
+  fi
+  exec tmux attach -t "=$1" \; select-window -t "$2" \; select-pane -t "$2"
+}
+
+if (( $# )); then
+  local want=$1
+  [[ $want == cw-* ]] || want=cw-$want
+  local r
+  for r in $rows; do
+    local -a f=("${(@ps:\t:)r}")
+    [[ $f[1] == $want ]] && go $f[2] $f[3]
+  done
+  print -u2 "crew: no worker named $want (run crew to list them)"
+  exit 1
+fi
+
+(( ${#rows} )) || { print -u2 'crew: no workers running'; exit 1 }
+local i=1 r
+for r in $rows; do
+  local -a f=("${(@ps:\t:)r}")
+  printf '%2d) %-10s %-26s %s\n' $i $f[1] $f[4] "${f[5][1,60]}"
+  (( i++ ))
+done
+local k
+read "k?attach to #: "
+[[ $k == <-> && -n ${rows[$k]:-} ]] || exit 1
+local -a f=("${(@ps:\t:)rows[$k]}")
+go $f[2] $f[3]

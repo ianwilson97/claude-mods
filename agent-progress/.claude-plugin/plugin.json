@@ -1,0 +1,7 @@
+{
+  "name": "agent-progress",
+  "version": "0.1.0",
+  "description": "Animated per-agent progress bars (main agent, subagents, cheap-worker workers) driven by their task lists",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

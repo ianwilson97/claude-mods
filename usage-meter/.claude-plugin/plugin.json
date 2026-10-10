@@ -1,0 +1,7 @@
+{
+  "name": "usage-meter",
+  "version": "0.1.0",
+  "description": "Five-hour and weekly plan usage as one line under the prompt, with reset countdown and pace forecast",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

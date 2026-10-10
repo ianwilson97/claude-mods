@@ -1,0 +1,7 @@
+{
+  "name": "cw-pane",
+  "version": "0.1.0",
+  "description": "Live pane of driver-seat cheap workers: running tasks, cost, fail and escalation rates from workers.tsv",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

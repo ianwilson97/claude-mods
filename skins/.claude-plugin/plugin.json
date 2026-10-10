@@ -1,0 +1,9 @@
+{
+  "name": "skins",
+  "version": "0.1.0",
+  "description": "Colour skins for all of Claude Code (Noir, Tokyo Night, Dracula, Catppuccin, Gruvbox, Everforest, Nordic, Monokai) as custom themes, picked from a pane",
+  "author": {
+    "name": "Ian Wilson"
+  },
+  "types": "./types/index.d.ts"
+}

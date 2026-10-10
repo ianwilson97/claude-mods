@@ -1,0 +1,7 @@
+{
+  "name": "context-bar",
+  "version": "0.1.0",
+  "description": "Live context-window bar above the prompt: fill, compaction point and what fills it",
+  "author": { "name": "Ian Wilson" },
+  "types": "./types/index.d.ts"
+}

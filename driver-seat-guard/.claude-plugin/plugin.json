@@ -1,0 +1,9 @@
+{
+  "name": "driver-seat-guard",
+  "version": "0.1.0",
+  "description": "Learn mode: one-step pacing, no unasked web search, no work on todos you haven't reached",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Ian Wilson"
+  }
+}

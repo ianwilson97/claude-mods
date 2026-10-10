@@ -1,0 +1,31 @@
+{
+  "name": "cheap-worker",
+  "version": "0.1.0",
+  "description": "Spin up Claude Code workers from a picker: OpenRouter (any model) or Amazon Bedrock (Claude), as tmux panes or terminal tabs; team messaging between them",
+  "author": {
+    "name": "Ian Wilson"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "provider": {
+      "type": "string",
+      "title": "Worker provider",
+      "description": "openrouter: any OpenRouter model, key from $CW_OPENROUTER_API_KEY. bedrock: Claude via Amazon Bedrock, using the Bedrock config in your user settings.",
+      "default": "openrouter",
+      "options": [
+        "openrouter",
+        "bedrock"
+      ]
+    },
+    "launch": {
+      "type": "string",
+      "title": "Where workers open",
+      "description": "panes: tiled in tmux session cw (tmux new -A -s cw). tabs: each worker its own tmux session, opened as a new Ghostty tab; reach any of them with CMD+T, then crew.",
+      "default": "panes",
+      "options": [
+        "panes",
+        "tabs"
+      ]
+    }
+  }
+}
