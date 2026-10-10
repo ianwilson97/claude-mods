@@ -13,15 +13,17 @@ export const BEDROCK_MODELS: OrModel[] = ['sonnet', 'opus', 'haiku'].map(a => ({
 export const defaultModelFor = (p: Provider) => (p === 'bedrock' ? 'anthropic/sonnet' : DEFAULT_MODEL)
 
 /**
- * AppleScript for Ghostty 1.3+: a new tab in the front window that attaches to the
- * worker's tmux session, then re-selects the tab you were on so focus doesn't jump.
+ * AppleScript for Ghostty 1.3+: a new tab in the front window whose process is the
+ * attach itself, then re-selects the tab you were on so focus doesn't jump. tmux by
+ * absolute path: a tab's command gets no Homebrew PATH (bare `tmux` isn't found there).
  */
-export function ghosttyTabScript(session: string): string {
+export function ghosttyTabScript(session: string, tmuxPath: string): string {
   if (!/^cw-[a-z0-9]+$/.test(session)) throw new Error(`not a worker session: ${session}`)
+  if (!/^\/[\w./+-]+$/.test(tmuxPath)) throw new Error(`not an absolute tmux path: ${tmuxPath}`)
   return [
     'tell application "Ghostty"',
     '  set cfg to new surface configuration',
-    `  set initial input of cfg to "crew ${session} || tmux attach -t =${session}" & linefeed`,
+    `  set command of cfg to "${tmuxPath} attach -t =${session}"`,
     '  if (count of windows) is 0 then',
     '    new window with configuration cfg',
     '  else',

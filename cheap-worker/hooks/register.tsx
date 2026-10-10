@@ -110,7 +110,10 @@ async function launch($: EngineInterface, task: string): Promise<{ l: Launch; is
     const pane = made.stdout.trim()
     await label(pane)
     // The first run waits on macOS's "allow control of Ghostty?" dialog; past 15s (or refused) → manual CMD+T + crew.
-    const tab = await $.process.run(['osascript', '-e', ghosttyTabScript(name)], { timeoutMs: 15_000 }).catch(() => null)
+    const tmuxPath = (await $.process.run(['zsh', '-c', 'command -v tmux']).catch(() => null))?.stdout.trim() ?? ''
+    const tab = tmuxPath.startsWith('/')
+      ? await $.process.run(['osascript', '-e', ghosttyTabScript(name, tmuxPath)], { timeoutMs: 15_000 }).catch(() => null)
+      : null
     return { l: { ...l, pane }, isTabOpen: tab?.exitCode === 0 }
   }
 

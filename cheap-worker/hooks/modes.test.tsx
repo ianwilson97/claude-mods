@@ -15,11 +15,12 @@ test('bedrock workers keep user settings (their Bedrock env) and run a Claude al
 })
 
 test('the Ghostty tab script opens a tab, attaches, and hands focus back', () => {
-  const s = ghosttyTabScript('cw-ab12c')
+  const s = ghosttyTabScript('cw-ab12c', '/opt/homebrew/bin/tmux')
   expect(s).toContain('new tab in w with configuration cfg')
-  expect(s).toContain('crew cw-ab12c || tmux attach -t =cw-ab12c')
+  expect(s).toContain('set command of cfg to "/opt/homebrew/bin/tmux attach -t =cw-ab12c"')
   expect(s).toContain('select tab here')
-  expect(() => ghosttyTabScript('cw-x"; do shell script "rm')).toThrow()
+  expect(() => ghosttyTabScript('cw-x"; do shell script "rm', '/opt/homebrew/bin/tmux')).toThrow()
+  expect(() => ghosttyTabScript('cw-ab12c', 'tmux')).toThrow()
 })
 
 function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean }) {
@@ -30,6 +31,7 @@ function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean }) 
     const argv = (e as { argv: string[] }).argv
     calls.push(argv.join(' '))
     if (argv[0] === 'osascript') return ok('', opts.isTabOk ? 0 : 1)
+    if (argv[0] === 'zsh' && argv[2] === 'command -v tmux') return ok('/opt/homebrew/bin/tmux\n')
     if (argv[1] === 'new-session') return ok('%9\n')
     return ok()
   })
