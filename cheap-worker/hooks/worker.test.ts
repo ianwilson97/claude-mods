@@ -16,6 +16,9 @@ test('worker script references the key, never inlines it, and quotes the task', 
   expect(s).toContain('ANTHROPIC_AUTH_TOKEN=$CW_OPENROUTER_API_KEY')
   expect(s).toContain('ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek/deepseek-v4.1-flash')
   expect(s).toContain('--permission-mode auto')
+  // the user's own skills ride along, read-only
+  expect(s).toContain('ln -sfn $HOME/.claude/skills $S/.claude/skills')
+  expect(s).toContain('--add-dir $S --disallowedTools "Edit(/$S/**)" "Edit(/$HOME/.claude/skills/**)"')
   expect(s).toContain(`'fix the parser'\\''s bug; rm -rf /'`)
   expect(workerScript({ name: 'x', model: 'a/b', mode: 'auto', task: '', contextTokens: 1048576 })).toContain(
     'export CLAUDE_CODE_MAX_CONTEXT_TOKENS=1048576',

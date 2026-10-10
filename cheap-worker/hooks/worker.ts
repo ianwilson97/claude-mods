@@ -73,8 +73,13 @@ export function workerScript(opts: { name: string; model: string; mode: Mode; ta
     `export ANTHROPIC_DEFAULT_OPUS_MODEL=${m} ANTHROPIC_DEFAULT_SONNET_MODEL=${m} ANTHROPIC_DEFAULT_HAIKU_MODEL=${m} CLAUDE_CODE_SUBAGENT_MODEL=${m}`,
     // Claude Code doesn't know OpenRouter models and assumes 200k; give it the real window.
     ...(opts.contextTokens && Number.isInteger(opts.contextTokens) ? [`export CLAUDE_CODE_MAX_CONTEXT_TOKENS=${opts.contextTokens}`] : []),
+    // Your own skills without the rest of user settings: a folder holding only .claude/skills
+    // (a link to ~/.claude/skills), added with --add-dir. Edits there are denied: acceptEdits would
+    // auto-approve them, and the link leads to the real skills.
+    'S=$HOME/.claude/cw-skills; mkdir -p $S/.claude && ln -sfn $HOME/.claude/skills $S/.claude/skills',
     // Same flags cw proved in Phase 0: no user hooks/plugins or MCP servers ride along.
-    `exec command claude -n ${opts.name} --model sonnet --setting-sources project,local --strict-mcp-config --permission-mode ${opts.mode}${opts.task ? ` ${sq(opts.task)}` : ''}`,
+    // --add-dir and --disallowedTools take several values: --permission-mode stays between them and the task.
+    `exec command claude -n ${opts.name} --model sonnet --setting-sources project,local --strict-mcp-config --add-dir $S --disallowedTools "Edit(/$S/**)" "Edit(/$HOME/.claude/skills/**)" "Edit(/$HOME/.agents/skills/**)" --permission-mode ${opts.mode}${opts.task ? ` ${sq(opts.task)}` : ''}`,
   ].join('\n')
 }
 
