@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Active, Launch, Mode, Msg, Picker, WStats } from '../types'
-import { BEDROCK_MODELS, DEFAULT_MODEL, META_FORMAT, attachLine, defaultModelFor, ghosttyTabScript, surfaceRef, bannerModel, parseMeta, choicesFor, clockDur, costOf, isRetired, isWorking, kfmt, leadFrom, parseModels, parsePanes, parsePeer, peekLines, price, projectDir, search, sq, teamPreamble, toPins, tokensOf, usageFrom, vendorOf, workerScript } from './worker'
+import { BEDROCK_MODELS, DEFAULT_MODEL, META_FORMAT, attachCommand, attachLine, defaultModelFor, ghosttyTabScript, herdrPaneId, surfaceRef, bannerModel, parseMeta, choicesFor, clockDur, costOf, isRetired, isWorking, kfmt, leadFrom, parseModels, parsePanes, parsePeer, peekLines, price, projectDir, search, sq, teamPreamble, toPins, tokensOf, usageFrom, vendorOf, workerScript } from './worker'
 import type { LaunchMode, Provider } from './worker'
 
 const PANE = 'cheap-worker'
@@ -131,10 +131,20 @@ async function launch($: EngineInterface, task: string): Promise<{ l: Launch; is
 }
 
 /**
- * Opens a background tab attached to the worker's session: in cmux (when this session runs
- * inside it) through its CLI, else in Ghostty through AppleScript. False → the caller says CMD+T + crew.
+ * Opens a background tab attached to the worker's session: in Herdr or cmux (when this session
+ * runs inside one) through its CLI, else in Ghostty through AppleScript. False → the caller says CMD+T + crew.
  */
 async function openTab($: EngineInterface, name: string, tmuxPath: string): Promise<boolean> {
+  // Herdr first: it runs inside cmux or Ghostty, so when it's here it's the layer you're looking at.
+  const herdrWs = await $.env.get('HERDR_WORKSPACE_ID').catch(() => undefined)
+  if (herdrWs) {
+    const herdr = (await $.env.get('HERDR_BIN_PATH').catch(() => undefined)) || 'herdr'
+    const made = await $.process.run([herdr, 'tab', 'create', '--workspace', herdrWs, '--label', name], { timeoutMs: 10_000 }).catch(() => null)
+    const pane = made?.exitCode === 0 ? herdrPaneId(made.stdout) : null
+    if (!pane) return false
+    const ran = await $.process.run([herdr, 'pane', 'run', pane, attachCommand(name, tmuxPath)], { timeoutMs: 10_000 }).catch(() => null)
+    return ran?.exitCode === 0
+  }
   if (await $.env.get('CMUX_WORKSPACE_ID').catch(() => undefined)) {
     const cmux = (await $.env.get('CMUX_BUNDLED_CLI_PATH').catch(() => undefined)) || 'cmux'
     const made = await $.process.run([cmux, 'new-surface', '--type', 'terminal', '--focus', 'false'], { timeoutMs: 10_000 }).catch(() => null)

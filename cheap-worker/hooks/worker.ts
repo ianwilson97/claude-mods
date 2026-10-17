@@ -17,9 +17,24 @@ export const surfaceRef = (stdout: string) => stdout.match(/\bsurface:\d+\b/)?.[
 
 /** What cmux types into the new tab: the attach, then Enter (a real newline; cmux sends text as typed). */
 export function attachLine(session: string, tmuxPath: string): string {
+  return `${attachCommand(session, tmuxPath)}\n`
+}
+
+/** The attach as one shell line; '=…' quoted, since zsh expands a bare =word to a command path. */
+export function attachCommand(session: string, tmuxPath: string): string {
   if (!/^cw-[a-z0-9]+$/.test(session)) throw new Error(`not a worker session: ${session}`)
   if (!/^\/[\w./+-]+$/.test(tmuxPath)) throw new Error(`not an absolute tmux path: ${tmuxPath}`)
-  return `${tmuxPath} attach -t '=${session}'\n`
+  return `${tmuxPath} attach -t '=${session}'`
+}
+
+/** `herdr tab create` answers JSON; the new tab's shell is `result.root_pane.pane_id` (e.g. `w5:p2`). */
+export function herdrPaneId(stdout: string): string | null {
+  try {
+    const id = (JSON.parse(stdout) as { result?: { root_pane?: { pane_id?: unknown } } }).result?.root_pane?.pane_id
+    return typeof id === 'string' && /^[\w:-]+$/.test(id) ? id : null
+  } catch {
+    return null
+  }
 }
 
 /**

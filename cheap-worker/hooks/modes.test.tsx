@@ -23,7 +23,7 @@ test('the Ghostty tab script opens a tab, attaches, and hands focus back', () =>
   expect(() => ghosttyTabScript('cw-ab12c', 'tmux')).toThrow()
 })
 
-function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean; isInCmux?: boolean }) {
+function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean; isInCmux?: boolean; isInHerdr?: boolean }) {
   const calls: string[] = []
   const toasts: string[] = []
   const ok = (stdout = '', exitCode = 0) => ({ value: { exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as never
@@ -32,6 +32,9 @@ function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean; is
     calls.push(argv.join(' '))
     if (argv[0] === 'osascript') return ok('', opts.isTabOk ? 0 : 1)
     if (argv[0] === '/Apps/cmux' && argv[1] === 'new-surface') return ok('OK surface:110 pane:38 workspace:14\n')
+    // the shape a live `herdr tab create` printed
+    if (argv[0] === '/bin/herdr' && argv[1] === 'tab')
+      return ok(JSON.stringify({ id: 'cli:tab:create', result: { root_pane: { pane_id: 'w5:p2', tab_id: 'w5:t2' }, tab: { label: argv.at(-1), tab_id: 'w5:t2' }, type: 'tab_created' } }))
     if (argv[0] === 'zsh' && argv[2] === 'command -v tmux') return ok('/opt/homebrew/bin/tmux\n')
     if (argv[1] === 'new-session') return ok('%9\n')
     return ok()
@@ -39,7 +42,10 @@ function host(on: Parameters<typeof mock.clock>[0], opts: { isTabOk: boolean; is
   on('session.cwd', () => ({ value: '/work/repo' }) as never)
   on('env.get', ($, e) => {
     const name = (e as { name: string }).name
-    const env: Record<string, string> = opts.isInCmux ? { CMUX_WORKSPACE_ID: 'ws-1', CMUX_BUNDLED_CLI_PATH: '/Apps/cmux' } : {}
+    const env: Record<string, string> = {
+      ...(opts.isInCmux ? { CMUX_WORKSPACE_ID: 'ws-1', CMUX_BUNDLED_CLI_PATH: '/Apps/cmux' } : {}),
+      ...(opts.isInHerdr ? { HERDR_WORKSPACE_ID: 'w5', HERDR_BIN_PATH: '/bin/herdr' } : {}),
+    }
     return { value: env[name] } as never
   })
   on('ui.open', ($, e) => ({ value: { id: e.id } }) as never)
@@ -89,6 +95,19 @@ test('inside cmux: a background cmux tab, named after the worker, typed the atta
   expect(h.calls).toContain(`/Apps/cmux rename-tab --surface surface:110 ${name}`)
   expect(h.calls).toContain(`/Apps/cmux send --surface surface:110 /opt/homebrew/bin/tmux attach -t '=${name}'\n`)
   expect(h.calls.some(c => c.startsWith('osascript'))).toBe(false)
+  expect(await ui.find({ type: 'Text', text: /opened in a new tab/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('inside Herdr (even within cmux): a labelled background Herdr tab runs the attach', { options: { provider: 'openrouter', launch: 'tabs' } } as never, async ($, on) => {
+  const h = host(on, { isTabOk: true, isInCmux: true, isInHerdr: true })
+  await $.command.run({ command: 'worker', args: '' } as never)
+  const ui = await $.ui.mount({ plugin: 'cheap-worker', surface: 'terminal', ...PICKER } as never)
+  await ui.input({ key: 'task', text: 'triage' })
+  const name = (h.calls.find(c => c.startsWith('tmux new-session')) ?? '').match(/-s (cw-[a-z0-9]+)/)?.[1]
+  expect(h.calls).toContain(`/bin/herdr tab create --workspace w5 --label ${name}`)
+  expect(h.calls).toContain(`/bin/herdr pane run w5:p2 /opt/homebrew/bin/tmux attach -t '=${name}'`)
+  expect(h.calls.some(c => c.startsWith('/Apps/cmux') || c.startsWith('osascript'))).toBe(false)
   expect(await ui.find({ type: 'Text', text: /opened in a new tab/ })).toBeDefined()
   await ui.unmount()
 })
